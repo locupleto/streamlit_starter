@@ -111,6 +111,9 @@ def determine_theme_status(theme):
 def create_default_configs():
     default_streamlit_config = {
         "theme": default_dark_theme["theme"],  # Default to dark theme
+        "client": {
+            "showSidebarNavigation": False  # Always hide the auto-built sidebar
+        }
     }
     os.makedirs(os.path.dirname(STREAMLIT_CONFIG_PATH), exist_ok=True)
     with open(STREAMLIT_CONFIG_PATH, "w") as f:
@@ -157,6 +160,19 @@ def load_config():
         create_default_configs()
 
     config = toml.load(STREAMLIT_CONFIG_PATH)
+
+    # Ensure client.showSidebarNavigation is set to False
+    if "client" not in config:
+        config["client"] = {"showSidebarNavigation": False}
+    elif "showSidebarNavigation" not in config["client"]:
+        config["client"]["showSidebarNavigation"] = False
+
+    # Save the config if we had to update it
+    if config["client"]["showSidebarNavigation"] is not False:
+        config["client"]["showSidebarNavigation"] = False
+        with open(STREAMLIT_CONFIG_PATH, "w") as f:
+            toml.dump(config, f)
+
     theme = config.get("theme", {})
     base = theme.get("base", "light")
     defaults = default_dark_theme if base == "dark" else default_light_theme
