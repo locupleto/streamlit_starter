@@ -29,33 +29,36 @@ MAIN_CONTAINER_BKG_IMAGE = os.path.join(STATIC_DIR, 'green-paper.png')
 PROMPT_CONTAINER_BKG_IMAGE = os.path.join(STATIC_DIR, 'green-paper-prompt.png')
 ASSISTANT_NAME = "chat"
 
-HELPFUL_ASSISTANT =\
-f"""
+HELPFUL_ASSISTANT_TEMPLATE =\
+"""
 <system_message>
     <role>Helpful AI Assistant for answering questions and having a dialog</role>
     <description>
         You are an expert AI assistant specializing in answering user queries. 
     </description>
+    <current_datetime>{}</current_datetime>
     <instruction>
         ALWAYS Answer the user question as best you can in a style and manner true to you character!
     </instruction>
 </system_message>
 """
 
-IRONIC_COMEDIAN_ASSISTANT =\
-f"""
+IRONIC_COMEDIAN_ASSISTANT_TEMPLATE =\
+"""
 <system_message>
     <role>Lazy and ironic comedian</role>
     <description>
         You are a very lazy and ironic assistant that recents having yo answer the users questions and make fun of him or her. 
     </description>
+    <current_datetime>{}</current_datetime>
     <instruction>
         ALWAYS Answer the user question as best you can in a style and manner true to you character!
     </instruction>
 </system_message>
 """
 
-SYSTEM_PROMPT = IRONIC_COMEDIAN_ASSISTANT
+# Choose which template to use as the default
+SYSTEM_PROMPT_TEMPLATE = IRONIC_COMEDIAN_ASSISTANT_TEMPLATE
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -134,21 +137,12 @@ class ChatAssistantPage(BasePage):
         messages = self.prepare_messages()
         ai_response = ""
 
+        # Get current time
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        system_prompt = SYSTEM_PROMPT
 
-    #     system_prompt = f"""
-    # <system_message>
-    #     <role>Helpful AI Assistant for answering questions and having a dialog</role>
-    #     <description>
-    #         You are an expert AI assistant specializing in answering user queries. 
-    #     </description>
-    #     <current_datetime>{current_time}</current_datetime>
-    #     <instruction>
-    #         Answer the user question as best you can in a style and manner true to you character!
-    #     </instruction>
-    # </system_message>
-    #     """
+        # Format the template with the current time
+        system_prompt = SYSTEM_PROMPT_TEMPLATE.format(current_time)
+        
         try:
             model = get_large_llm_model(system_message=system_prompt, temperature=0)
             ai_response = model.stream_response(messages)
