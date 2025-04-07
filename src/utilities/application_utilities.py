@@ -25,8 +25,9 @@ from pages.base_page import BasePage
 STREAMLIT_CONFIG_PATH = ".streamlit/config.toml"
 APP_CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 
                                '.config', 'app_config.toml')
-#@st.cache_resource
-# In application_utilities.py, modify the load_modules() function:
+
+if "use_ant_menu" not in st.session_state:
+    st.session_state.use_ant_menu = True
 
 def load_modules():
     with st.spinner('Loading modules...'):
@@ -184,12 +185,16 @@ def load_config():
     orientation = extras.get("orientation", "vertical")
     wide_mode = extras.get("wide_mode", False)
 
+    # Add this line to read the menu type setting
+    use_ant_menu = app_config.get("menu", {}).get("use_ant_menu", True)
+
     # Store everything in a dictionary instead of directly in session state
     config_data = {
         "theme": theme,
         "theme_status": determine_theme_status(theme),
         "orientation": orientation,
-        "wide_mode": wide_mode
+        "wide_mode": wide_mode,
+        "use_ant_menu": use_ant_menu  
     }
 
     # Add app settings to the config_data
@@ -308,43 +313,241 @@ def save_config(theme=None, orientation=None, wide_mode=True):
     sleep(0.5)
     st.rerun()  # Re-run the app to apply the new config files
 
-# Function to dynamically create menu options from loaded modules
+def build_hierarchical_menu_structure(modules):
+    """
+    Build a hierarchical menu structure for st_ant_menu based on parent-child 
+    relationships.
+
+    Args:
+        modules (list): List of (module_name, page_instance) tuples
+
+    Returns:
+        list: Hierarchical menu data structure for st_ant_menu
+    """
+    # Create a dictionary to store pages by their module names
+    page_dict = {mod[0]: mod[1] for mod in modules}
+
+    # First pass: identify top-level pages and create a mapping
+    top_level_pages = []
+    child_pages = {}
+
+    for module_name, page in modules:
+        parent = page.parent()
+        if parent is None:
+            # This is a top-level page
+            top_level_pages.append((module_name, page))
+        else:
+            # This is a child page, add it to the appropriate parent's children list
+            if parent not in child_pages:
+                child_pages[parent] = []
+            child_pages[parent].append((module_name, page))
+
+    # Sort top-level pages by order
+    top_level_pages.sort(key=lambda x: x[1].order())
+
+    # Function to recursively build menu items
+    def build_menu_item(module_name, page):
+        # Determine icon prefix based on icon_type
+        icon_prefix = page.icon_type()
+        icon_name = f"{icon_prefix}{page.icon()}"
+
+        # Create the basic menu item
+        menu_item = {
+            "key": module_name,
+            "label": page.label(),
+            "icon": icon_name
+        }
+
+        # Set group type if specified
+        group_type = page.group_type()
+        if group_type:
+            menu_item["type"] = group_type
+        # Only add divider type if not a group
+        elif page.divider_before():
+            menu_item["type"] = "divider"
+
+        # Add children if this page has any
+        children_modules = page.children()
+        if children_modules:
+            # Use explicitly defined children
+            menu_item["children"] = [
+                build_menu_item(child_mod, page_dict[child_mod]) 
+                for child_mod in children_modules 
+                if child_mod in page_dict
+            ]
+        elif module_name in child_pages:
+            # Use children that declared this page as their parent
+            child_list = child_pages[module_name]
+            child_list.sort(key=lambda x: x[1].order())
+            menu_item["children"] = [
+                build_menu_item(child_mod, child_page) 
+                for child_mod, child_page in child_list
+            ]
+
+        return menu_item
+
+    # Build the final menu structure
+    menu_data = []
+
+    # Build top-level items without adding separate dividers
+    for module_name, page in top_level_pages:
+        menu_data.append(build_menu_item(module_name, page))
+
+    return menu_data
+
 def dynamic_streamlit_menu(orientation="vertical"):
+    """
+    Create a dynamic menu based on loaded modules.
+
+    Args:
+        orientation (str): Menu orientation, either "vertical" or "horizontal"
+
+    Returns:
+        tuple: (selected_page_label, dictionary mapping labels to page objects)
+    """
     if 'loaded_modules' not in st.session_state:
         modules = load_modules()
         st.session_state['loaded_modules'] = modules
     else:
         modules = st.session_state['loaded_modules']
-    modules.sort(key=lambda x: x[1].order())
 
-    options = [mod[1].label() for mod in modules]
-    icons = [mod[1].icon() for mod in modules]
+    # Create a dictionary mapping module names to page objects
+    page_dict = {mod[0]: mod[1] for mod in modules}
 
-    # Handle empty options list
-    if not options:
-        st.error("No modules were loaded. Please check your pages directory.")
-        return None, {}
+    # Create a dictionary mapping page labels to page objects
+    label_to_page = {mod[1].label(): mod[1] for mod in modules}
 
-    # Ensure default_index is valid
-    default_index = 0  # Always use 0 as the safe default
+    # Check if we should use ant_menu or option_menu
+    use_ant_menu = st.session_state.get("use_ant_menu", False)
 
-    if orientation == "vertical":
-        with st.sidebar:
+    if use_ant_menu:
+        try:
+            from st_ant_menu import st_ant_menu
+
+            # Build hierarchical menu structure
+            menu_data = build_hierarchical_menu_structure(modules)
+
+            # Determine theme based on current Streamlit theme
+            theme = "dark" if st.session_state.get("theme", {}).get("base", "light") == "dark" else "light"
+
+            # Get theme colors from session state
+            primary_color = st.session_state.get("theme", {}).get("primaryColor", "#F63366")
+            background_color = st.session_state.get("theme", {}).get("backgroundColor", "#FFFFFF")
+            secondary_background_color = st.session_state.get("theme", {}).get("secondaryBackgroundColor", "#F0F2F6")
+            text_color = st.session_state.get("theme", {}).get("textColor", "#262730")
+
+            # Create custom CSS styling using generall_css_styling
+            generall_css_styling = f"""
+            .ant-menu {{
+              background-color: {background_color} !important;
+              color: {text_color} !important;
+            }}
+            .ant-menu-item-selected {{
+              background-color: {primary_color} !important;
+              color: {text_color} !important;
+            }}
+            .ant-menu-item:hover {{
+              background-color: {secondary_background_color} !important;
+              color: {text_color} !important;
+            }}
+            .ant-menu-submenu-title:hover {{
+              background-color: {secondary_background_color} !important;
+              color: {text_color} !important;
+            }}
+            .ant-menu-submenu-open > .ant-menu-submenu-title {{
+              color: {primary_color} !important;
+            }}
+            .ant-menu-submenu-selected > .ant-menu-submenu-title {{
+              color: {primary_color} !important;
+            }}
+            .ant-menu-item-divider {{
+              background-color: {primary_color}33 !important;
+            }}
+            """
+
+            # Find the default page module name to use as defaultSelectedKeys
+            default_page_label = st.session_state.get("default_page")
+            default_module_name = None
+
+            # Find the module name that corresponds to the default page label
+            for mod_name, page_obj in modules:
+                if page_obj.label() == default_page_label:
+                    default_module_name = mod_name
+                    break
+
+            # If no selected_key in session state, use the default module name
+            selected_key = st.session_state.get("selected_key", default_module_name)
+
+            # Place the menu in the sidebar or horizontally based on orientation
+            if orientation == "vertical":
+                with st.sidebar:
+                    selected_key = st_ant_menu(
+                        menu_data,
+                        key="main_menu",
+                        theme=theme,
+                        inlineIndent=24,
+                        iconMinWidth="24px",
+                        iconSize="16px",
+                        generall_css_styling=generall_css_styling,
+                        defaultSelectedKeys=[selected_key] if selected_key else None
+                    )
+            else:
+                # For horizontal menu
+                selected_key = st_ant_menu(
+                    menu_data,
+                    key="main_menu",
+                    theme=theme,
+                    modus="horizontal",
+                    inlineIndent=24,
+                    iconMinWidth="24px",
+                    iconSize="16px",
+                    generall_css_styling=generall_css_styling,
+                    defaultSelectedKeys=[selected_key] if selected_key else None
+                )
+
+            # Store the selected key in session state for next render
+            if selected_key:
+                st.session_state["selected_key"] = selected_key
+
+            # Map the selected key (module name) back to the page label
+            if selected_key:
+                selected_label = page_dict[selected_key].label() if selected_key in page_dict else None
+                return selected_label, label_to_page
+            else:
+                # Default to first page if nothing is selected
+                first_page = modules[0][1]
+                return first_page.label(), label_to_page
+
+        except ImportError:
+            # Fall back to option_menu if st_ant_menu is not available
+            st.warning("st_ant_menu is not installed. Falling back to option_menu.")
+            use_ant_menu = False
+
+    # Use option_menu as fallback
+    if not use_ant_menu:
+        options = [mod[1].label() for mod in modules]
+        icons = [mod[1].icon() for mod in modules]
+
+        # Ensure default_index is valid
+        default_index = 0  # Always use 0 as the safe default
+
+        if orientation == "vertical":
+            with st.sidebar:
+                selected = option_menu(
+                    menu_title=None,
+                    options=options,
+                    icons=icons,
+                    menu_icon="cast",
+                    default_index=default_index
+                )
+        else:
             selected = option_menu(
                 menu_title=None,
                 options=options,
                 icons=icons,
                 menu_icon="cast",
-                default_index=default_index
+                default_index=default_index,
+                orientation="horizontal"
             )
-    else:
-        selected = option_menu(
-            menu_title=None,
-            options=options,
-            icons=icons,
-            menu_icon="cast",
-            default_index=default_index,
-            orientation="horizontal"
-        )
 
-    return selected, {mod[1].label(): mod[1] for mod in modules}
+        return selected, label_to_page
