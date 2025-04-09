@@ -11,6 +11,7 @@ class FontAwesomeIconDemoPage(BasePage):
 
         Example: `return "fa-"`
         """)
+        st.markdown("See: [FontAwesome Icons](https://fontawesome.com/icons)")
 
     def label(self):
         return "FontAwesome Icons"

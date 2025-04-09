@@ -11,6 +11,7 @@ class BootstrapIconDemoPage(BasePage):
 
         Example: `return "heart-fill"`
         """)
+        st.markdown("See: [Bootstrap Icons](https://icons.getbootstrap.com/)")
 
     def label(self):
         return "Bootstrap Icons"

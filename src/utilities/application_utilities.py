@@ -26,8 +26,8 @@ STREAMLIT_CONFIG_PATH = ".streamlit/config.toml"
 APP_CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 
                                '.config', 'app_config.toml')
 
-if "use_ant_menu" not in st.session_state:
-    st.session_state.use_ant_menu = True
+if "use_st_multi_icon_menu" not in st.session_state:
+    st.session_state.use_st_multi_icon_menu = True
 
 def load_modules():
     with st.spinner('Loading modules...'):
@@ -186,7 +186,7 @@ def load_config():
     wide_mode = extras.get("wide_mode", False)
 
     # Add this line to read the menu type setting
-    use_ant_menu = app_config.get("menu", {}).get("use_ant_menu", True)
+    use_st_multi_icon_menu = app_config.get("menu", {}).get("use_st_multi_icon_menu", True)
 
     # Store everything in a dictionary instead of directly in session state
     config_data = {
@@ -194,7 +194,7 @@ def load_config():
         "theme_status": determine_theme_status(theme),
         "orientation": orientation,
         "wide_mode": wide_mode,
-        "use_ant_menu": use_ant_menu  
+        "use_st_multi_icon_menu": use_st_multi_icon_menu  
     }
 
     # Add app settings to the config_data
@@ -315,14 +315,14 @@ def save_config(theme=None, orientation=None, wide_mode=True):
 
 def build_hierarchical_menu_structure(modules):
     """
-    Build a hierarchical menu structure for st_ant_menu based on parent-child 
+    Build a hierarchical menu structure for st_multi_icon_menu based on parent-child 
     relationships.
 
     Args:
         modules (list): List of (module_name, page_instance) tuples
 
     Returns:
-        list: Hierarchical menu data structure for st_ant_menu
+        list: Hierarchical menu data structure for st_multi_icon_menu
     """
     # Create a dictionary to store pages by their module names
     page_dict = {mod[0]: mod[1] for mod in modules}
@@ -418,11 +418,14 @@ def dynamic_streamlit_menu(orientation="vertical"):
     label_to_page = {mod[1].label(): mod[1] for mod in modules}
 
     # Check if we should use ant_menu or option_menu
-    use_ant_menu = st.session_state.get("use_ant_menu", False)
+    use_st_multi_icon_menu = st.session_state.get("use_st_multi_icon_menu", False)
 
-    if use_ant_menu:
+    if use_st_multi_icon_menu:
+
+
+        # TODO test
         try:
-            from st_ant_menu import st_ant_menu
+            from st_multi_icon_menu import st_multi_icon_menu
 
             # Build hierarchical menu structure
             menu_data = build_hierarchical_menu_structure(modules)
@@ -481,7 +484,7 @@ def dynamic_streamlit_menu(orientation="vertical"):
             # Place the menu in the sidebar or horizontally based on orientation
             if orientation == "vertical":
                 with st.sidebar:
-                    selected_key = st_ant_menu(
+                    selected_key = st_multi_icon_menu(
                         menu_data,
                         key="main_menu",
                         theme=theme,
@@ -493,7 +496,7 @@ def dynamic_streamlit_menu(orientation="vertical"):
                     )
             else:
                 # For horizontal menu
-                selected_key = st_ant_menu(
+                selected_key = st_multi_icon_menu(
                     menu_data,
                     key="main_menu",
                     theme=theme,
@@ -519,12 +522,12 @@ def dynamic_streamlit_menu(orientation="vertical"):
                 return first_page.label(), label_to_page
 
         except ImportError:
-            # Fall back to option_menu if st_ant_menu is not available
-            st.warning("st_ant_menu is not installed. Falling back to option_menu.")
-            use_ant_menu = False
+            # Fall back to option_menu if st_multi_icon_menu is not available
+            st.warning("st_multi_icon_menu is not installed. Falling back to option_menu.")
+            use_st_multi_icon_menu = False
 
     # Use option_menu as fallback
-    if not use_ant_menu:
+    if not use_st_multi_icon_menu:
         options = [mod[1].label() for mod in modules]
         icons = [mod[1].icon() for mod in modules]
 

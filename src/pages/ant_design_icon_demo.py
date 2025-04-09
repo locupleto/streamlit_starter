@@ -11,6 +11,7 @@ class AntDesignIconDemoPage(BasePage):
 
         Example: `return "ad-"`
         """)
+        st.markdown("See: [Ant Design Icons](https://ant.design/components/icon)")
 
     def label(self):
         return "Ant Design Icons"
