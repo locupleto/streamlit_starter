@@ -410,6 +410,7 @@ def dynamic_streamlit_menu(orientation="vertical"):
         st.session_state['loaded_modules'] = modules
     else:
         modules = st.session_state['loaded_modules']
+    modules.sort(key=lambda x: x[1].order())
 
     # Create a dictionary mapping module names to page objects
     page_dict = {mod[0]: mod[1] for mod in modules}
