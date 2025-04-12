@@ -6,6 +6,8 @@
 
 This project provides a structured framework for rapidly developing Streamlit applications that leverage Large Language Models (LLMs). It features a modular page system, theme customization, chat interfaces with history management, and support for multiple LLM providers.
 
+![Screenshot](https://github.com/locupleto/streamlit_starter/raw/main/Screenshot.png)
+
 ## Key Features
 
 - **Modular Page Architecture:** Easily add new pages by extending the `BasePage` class
