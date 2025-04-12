@@ -91,6 +91,48 @@ class MyNewPage(BasePage):
         return 10  # Menu position
 ```
 
+## Hierarchical Menus
+
+The application supports hierarchical menus (parent-child relationships) with a simplified approach:
+
+### Creating Parent-Child Relationships
+
+1. **For Child Pages**: Simply specify the parent module name in the `parent()` method:
+
+   ```python
+   def parent(self):
+       # This must match the module name of the parent page
+       return "menu_demo"
+   ```
+
+2. **For Parent Pages**: No need to explicitly list children! The menu structure is built automatically by detecting which pages have declared this page as their parent.
+
+   However, if you want to explicitly control the children or their order, you can still override the `children()` method:
+
+   ```python
+   def children(self):
+       # Optional - only needed if you want to explicitly control children
+       return ["menu_demo_child1", "menu_demo_child2"]
+   ```
+
+3. **Menu Groups**: To create a menu group (a parent item that can be expanded), set the appropriate group type:
+
+   ```python
+   def group_type(self):
+       return "group"  # Creates an expandable menu group
+   ```
+
+### How It Works
+
+The system automatically:
+
+- Identifies parent-child relationships by checking each page's `parent()` method
+- Builds a mapping of parent pages to their children
+- Prioritizes explicitly defined children (via `children()`) but falls back to auto-detected children
+- Sorts children by their `order()` value
+
+This approach eliminates redundancy and makes maintaining menu structures much easier.
+
 ## LLM Integration
 
 The application supports multiple LLM providers through a unified interface:

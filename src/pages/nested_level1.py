@@ -18,6 +18,3 @@ class NestedLevel1Page(BasePage):
 
     def parent(self):
         return "advanced_features"
-
-    def children(self):
-        return ["nested_level2"]

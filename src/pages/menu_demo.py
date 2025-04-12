@@ -14,7 +14,3 @@ class MenuDemoParentPage(BasePage):
 
     def order(self):
         return 90
-
-    def children(self):
-        # Use the actual module names of the child pages
-        return ["menu_demo_child1", "menu_demo_child2"]

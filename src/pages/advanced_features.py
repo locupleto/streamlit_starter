@@ -18,6 +18,3 @@ class AdvancedFeaturesPage(BasePage):
 
     def divider_before(self):
         return True  # Add a divider before this item
-
-    def children(self):
-        return ["nested_level1"]

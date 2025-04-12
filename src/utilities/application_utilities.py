@@ -316,7 +316,8 @@ def save_config(theme=None, orientation=None, wide_mode=True):
 def build_hierarchical_menu_structure(modules):
     """
     Build a hierarchical menu structure for st_multi_icon_menu based on parent-child 
-    relationships.
+    relationships. Child pages only need to specify their parent - parent pages don't
+    need to explicitly list their children.
 
     Args:
         modules (list): List of (module_name, page_instance) tuples
@@ -327,7 +328,7 @@ def build_hierarchical_menu_structure(modules):
     # Create a dictionary to store pages by their module names
     page_dict = {mod[0]: mod[1] for mod in modules}
 
-    # First pass: identify top-level pages and create a mapping
+    # First pass: identify top-level pages and create a mapping of parents to children
     top_level_pages = []
     child_pages = {}
 
@@ -366,17 +367,18 @@ def build_hierarchical_menu_structure(modules):
         elif page.divider_before():
             menu_item["type"] = "divider"
 
-        # Add children if this page has any
-        children_modules = page.children()
-        if children_modules:
-            # Use explicitly defined children
+        # Add children - prioritize explicitly defined children, then fall back to auto-detected children
+        explicitly_defined_children = page.children()
+
+        # If this page has explicitly defined children, use those
+        if explicitly_defined_children:
             menu_item["children"] = [
                 build_menu_item(child_mod, page_dict[child_mod]) 
-                for child_mod in children_modules 
+                for child_mod in explicitly_defined_children 
                 if child_mod in page_dict
             ]
+        # Otherwise, use children that declared this page as their parent
         elif module_name in child_pages:
-            # Use children that declared this page as their parent
             child_list = child_pages[module_name]
             child_list.sort(key=lambda x: x[1].order())
             menu_item["children"] = [
@@ -389,7 +391,7 @@ def build_hierarchical_menu_structure(modules):
     # Build the final menu structure
     menu_data = []
 
-    # Build top-level items without adding separate dividers
+    # Build top-level items
     for module_name, page in top_level_pages:
         menu_data.append(build_menu_item(module_name, page))
 
