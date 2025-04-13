@@ -43,10 +43,13 @@ def load_modules():
                 try:
                     module = importlib.import_module(module_path)
 
-                    # Find all classes that inherit from BasePage
+                    # Find all classes that inherit from BasePage and are defined in this module
                     page_classes = []
                     for name, obj in module.__dict__.items():
-                        if isinstance(obj, type) and issubclass(obj, BasePage) and obj is not BasePage:
+                        if (isinstance(obj, type) and 
+                            issubclass(obj, BasePage) and 
+                            obj is not BasePage and
+                            obj.__module__ == module.__name__):  # Check if class is defined in this module
                             page_classes.append(obj)
 
                     # Sort by inheritance depth (most derived classes first)
