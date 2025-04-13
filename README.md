@@ -149,9 +149,7 @@ Configure API keys on the **App Settings** page.
 
 [MIT License](LICENSE)
 
-## Contributing
+## Starting point
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-> **Note:** This project is designed as a starting point for your own LLM-powered Streamlit applications. Customize it to fit your specific needs.
+This project is designed as a starting point for LLM-powered Streamlit applications. Fork and customize it to fit your specific needs and go from there.
 
