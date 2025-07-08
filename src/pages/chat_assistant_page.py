@@ -115,11 +115,35 @@ class ChatAssistantPage(BasePage):
                 st.markdown(message["content"])
 
         # User Query...
+        enable_attatchments = False # "multiple"
         model_signature = BaseLLMModel.large_model_name()
-        if prompt := st.chat_input(f"{model_signature}: What can I help you with?"):
+        if prompt := st.chat_input(f"{model_signature}: What can I help you with?",
+                                   accept_file=enable_attatchments,
+                                   file_type=['txt','png','jpg','jpeg']):
             st.session_state.chat_messages.append({"role": "user", "content": prompt})
             with st.chat_message("user", avatar=USER_AVATAR):
-                st.markdown(prompt)
+                if prompt and enable_attatchments:
+                    if prompt["files"]:
+                        for uploaded_file in prompt["files"]:
+                            file_id = uploaded_file.file_id
+                            name = uploaded_file.name
+                            type = uploaded_file.type
+                            size = uploaded_file.size
+
+                            st.write(f"📄 **{name}**")
+                            st.write(f"• Type: `{type}`")
+                            st.write(f"• Size: `{size}` bytes")
+
+                            # To read file as bytes:
+                            urls = uploaded_file._file_urls
+                            bytes_data = uploaded_file.getvalue()
+                            st.write(bytes_data)
+                    #ChatInputValue
+                    st.write(prompt['text'])
+                    pass
+                    #st.image(prompt["files"][0])                            
+                else:
+                    st.markdown(prompt)
 
             # Assistant (streaming) response...
             with st.chat_message("assistant", avatar=CHATBOT_AVATAR):
