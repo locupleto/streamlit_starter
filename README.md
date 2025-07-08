@@ -153,3 +153,27 @@ Configure API keys on the **App Settings** page.
 
 This project is designed as a starting point for LLM-powered Streamlit applications. Fork and customize it to fit your specific needs and go from there.
 
+An alternate way to create a new project is this:
+
+1. **Clone this repository**
+
+2. **Create a new project <new-projectname> on GitHub**
+   
+3. **Duplicate and rename a local copy of the Starter project**
+
+4. **Re-initialise git:**
+   ```bash
+   rm -rf .git
+   git init
+   git add .
+   git commit -m "Initial commit for <new-projectname>"
+   git remote add origin \
+   https://github.com:YOURUSERNAME/new-projectname.git
+   git branch -M main
+   git push -u origin main
+   ```
+
+5. **Run the application:**
+   ```bash
+   streamlit run src/app.py
+   ```
